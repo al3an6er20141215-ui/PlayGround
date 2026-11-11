@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#080b15">
+<title>Hollow Vale — The Last Bell</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Marcellus&display=swap');
+:root{color-scheme:dark;--ink:#080b15;--paper:#e9e5d7;--muted:#91a0ad;--gold:#e5c78b;--cyan:#a8e7dc;--red:#e77b76}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:'DM Mono',monospace;touch-action:none;user-select:none;-webkit-user-select:none}
+body{display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#202638 0,#101522 43%,#080b15 79%)}
+.game{width:min(100vw,1280px,calc((100dvh - 105px)*1.7778));display:flex;flex-direction:column;align-items:center;gap:14px;padding:12px 18px calc(12px + env(safe-area-inset-bottom))}
+.topbar{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 3px;color:#aab1b8;font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+.brand{display:flex;align-items:center;gap:10px;color:#e5dfce}.sigil{width:22px;height:22px;border:1px solid #827a67;border-radius:50%;display:grid;place-items:center;color:var(--gold);font:13px Georgia}
+.status{display:flex;gap:22px;align-items:center}.status b{color:#d7c99e;font-weight:400}.sound{border:0;background:none;color:#b9c3c4;font:inherit;letter-spacing:.15em;cursor:pointer;padding:7px}
+.frame{width:100%;position:relative;overflow:hidden;border:1px solid #55596a;background:#080b13;box-shadow:0 22px 80px #02040bb5,0 0 0 5px #171c29}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;touch-action:none}
+.footer{width:100%;display:flex;justify-content:space-between;align-items:center;color:#71808b;font-size:9px;letter-spacing:.13em;text-transform:uppercase}.footer .key{color:#c3b991;border:1px solid #424856;padding:3px 6px;margin:0 3px;font-size:9px}.hint{display:flex;align-items:center;gap:8px}.hint span{color:#b4bdc0}
+.touch-controls{display:none;width:100%;height:94px;align-items:center;justify-content:space-between;padding:0 7px;touch-action:none}.pad{display:flex;gap:9px;align-items:center}.touch-btn{width:62px;height:62px;border:1px solid #70748188;border-radius:50%;background:linear-gradient(145deg,#293142dd,#101522ee);color:#e2d9bf;display:grid;place-items:center;font:20px 'DM Mono',monospace;box-shadow:0 5px 16px #02040a88,inset 0 1px #ffffff18;touch-action:none}.touch-btn small{font-size:8px;letter-spacing:.08em;display:block;color:#a8b1b1;margin-top:3px}.touch-btn.action{width:70px;height:70px;border-color:#c5a97788;color:#ead8ae}.touch-btn.dash{width:58px;height:58px;color:#b9d8d1}.touch-btn:active,.touch-btn.down{background:#46505dcc;transform:scale(.96)}
+@media (max-width:700px){.game{width:min(100vw,calc((100dvh - 155px)*1.7778));gap:8px;padding:calc(7px + env(safe-area-inset-top)) 8px calc(7px + env(safe-area-inset-bottom))}.topbar{font-size:8px;letter-spacing:.12em}.status{gap:9px}.sigil{width:18px;height:18px}.frame{border-width:1px;box-shadow:0 9px 35px #02040bb5,0 0 0 3px #171c29}.touch-controls{display:flex;height:88px}.touch-btn{width:53px;height:53px}.touch-btn.action{width:64px;height:64px}.touch-btn.dash{width:50px;height:50px}.footer{font-size:7px;letter-spacing:.06em}.footer .key{font-size:7px;padding:2px 4px}.hint{gap:4px}.desktop-only{display:none}}
+@media (max-height:520px) and (orientation:landscape){.game{width:min(100vw,1050px);gap:5px;padding:4px 12px}.topbar{font-size:8px}.footer{font-size:7px}.touch-controls{height:58px}.touch-btn{width:47px;height:47px}.touch-btn.action{width:54px;height:54px}.touch-btn.dash{width:44px;height:44px}}
+</style>
+</head>
+<body>
+<main class="game">
+  <header class="topbar"><div class="brand"><div class="sigil">✳</div><span>Hollow Vale <span style="color:#6e7885">/</span> The Last Bell</span></div><div class="status"><span>Trial <b>01</b></span><span>✦ <b id="soulReadout">00</b></span><button class="sound" id="soundBtn" aria-label="Toggle sound">♫ <span id="soundLabel">SOUND ON</span></button></div></header>
+  <section class="frame"><canvas id="game" width="960" height="540" aria-label="Hollow Vale boss fight game"></canvas></section>
+  <nav class="touch-controls" aria-label="Touch controls">
+    <div class="pad"><button class="touch-btn" data-key="left" aria-label="Move left">‹</button><button class="touch-btn" data-key="right" aria-label="Move right">›</button><button class="touch-btn dash" data-key="dash" aria-label="Dash"><span>↠<small>DASH</small></span></button></div>
+    <div class="pad"><button class="touch-btn" data-key="jump" aria-label="Jump">↑</button><button class="touch-btn action" data-key="attack" aria-label="Attack"><span>⚔<small>STRIKE</small></span></button></div>
+  </nav>
+  <footer class="footer"><div class="hint desktop-only"><span class="key">A D</span> move <span class="key">SPACE</span> jump <span class="key">J</span> strike <span class="key">K</span> dash</div><div class="hint">A quiet place, before the <span style="color:#d3bc89">storm</span>.</div><div class="hint desktop-only">BEST <span id="bestTime">—</span></div></footer>
+</main>
+<script>
+(() => {
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const W=960,H=540,ground=452;
+const uiSoul=document.getElementById('soulReadout');
+const keys={left:false,right:false,jump:false,attack:false,dash:false};
+let mode='title',last=0,timer=0,shake=0,soul=0, sound=true, audio=null;
+let best=Number(localStorage.getItem('hollowValeBest')||0);
+const player={x:255,y:ground-52,vx:0,vy:0,w:34,h:50,face:1,hp:5,maxHp:5,inv:0,attack:0,dash:0,dashCd:0,grounded:true,anim:0};
+const boss={x:710,y:ground-94,w:76,h:94,hp:12,maxHp:12,inv:0,phase:'idle',phaseT:1.6,face:-1,attackKind:'',hitCount:0};
+let projectiles=[],particles=[],embers=[],damageFlash=0;
+const rand=(a,b)=>a+Math.random()*(b-a),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+function tone(freq=240,dur=.08,type='sine',vol=.035){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur)}catch(e){}}
+function burst(x,y,color,n=8,power=180){for(let i=0;i<n;i++){const a=rand(0,Math.PI*2),v=rand(power*.25,power);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.22,.6),max:.6,size:rand(2,5),color})}}
+function reset(){mode='playing';timer=0;soul=0;uiSoul.textContent='00';player.x=245;player.y=ground-player.h;player.vx=player.vy=0;player.hp=player.maxHp;player.inv=0;player.attack=0;player.dash=0;player.dashCd=0;boss.x=710;boss.hp=boss.maxHp;boss.inv=0;boss.phase='idle';boss.phaseT=1.1;boss.hitCount=0;projectiles=[];particles=[];damageFlash=0;tone(360,.12)}
+function startOrAct(){if(mode==='title'||mode==='dead'||mode==='won')reset();else if(mode==='playing')keys.attack=true}
+function onKey(e,down){const k=e.key.toLowerCase();if([' ','arrowleft','arrowright','arrowup','arrowdown'].includes(k))e.preventDefault();if(k==='a'||k==='arrowleft')keys.left=down;if(k==='d'||k==='arrowright')keys.right=down;if(k===' '||k==='w'||k==='arrowup')keys.jump=down;if(k==='j'||k==='z'||k==='enter'){if(down&&!keys.attack)startOrAct();keys.attack=down}if(k==='k'||k==='x'||k==='shift'){if(down&&!keys.dash&&mode==='playing')doDash();keys.dash=down}if(k==='escape'&&down)mode=mode==='paused'?'playing':mode==='playing'?'paused':mode}
+window.addEventListener('keydown',e=>onKey(e,true));window.addEventListener('keyup',e=>onKey(e,false));
+canvas.addEventListener('pointerdown',()=>{if(mode!=='playing')startOrAct();else keys.attack=true});canvas.addEventListener('pointerup',()=>keys.attack=false);
+document.querySelectorAll('.touch-btn').forEach(btn=>{const key=btn.dataset.key;const down=e=>{e.preventDefault();btn.classList.add('down');if(key==='dash'){if(mode!=='playing')startOrAct();else doDash()}else if(key==='attack'){if(mode!=='playing')startOrAct();else keys.attack=true}else{if(mode!=='playing')startOrAct();keys[key]=true}};const up=e=>{e.preventDefault();btn.classList.remove('down');if(key!=='dash')keys[key]=false};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up)});
+document.getElementById('soundBtn').addEventListener('click',()=>{sound=!sound;document.getElementById('soundLabel').textContent=sound?'SOUND ON':'SOUND OFF';if(sound)tone(440,.07)});
+function doDash(){if(player.dashCd>0||mode!=='playing')return;player.dash=.19;player.dashCd=.8;player.inv=Math.max(player.inv,.28);player.vx=player.face*670;player.vy=0;burst(player.x+player.w/2,player.y+25,'#9bded5',5,100);tone(180,.13,'sawtooth',.025)}
+function damagePlayer(){if(player.inv>0||mode!=='playing')return;player.hp--;player.inv=1.05;damageFlash=.25;shake=9;burst(player.x+player.w/2,player.y+20,'#f1aba0',11,210);tone(100,.22,'square',.045);if(player.hp<=0){mode='dead';tone(75,.4,'sine',.04)}}
+function hitBoss(){if(boss.inv>0||mode!=='playing')return;boss.hp--;boss.inv=.22;soul=Math.min(99,soul+8);uiSoul.textContent=String(soul).padStart(2,'0');shake=5;burst(boss.x+boss.w/2,boss.y+45,'#f0ce88',12,240);tone(280,.07,'triangle',.04);if(boss.hp<=0){mode='won';if(!best||timer<best){best=timer;localStorage.setItem('hollowValeBest',best)}document.getElementById('bestTime').textContent=formatTime(best);burst(boss.x+boss.w/2,boss.y+40,'#d7f0d7',36,300);tone(560,.5,'sine',.05)}}
+function formatTime(t){return Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')}
+function update(dt){
+  if(mode!=='playing'){timer+=0;return}timer+=dt;damageFlash=Math.max(0,damageFlash-dt);shake=Math.max(0,shake-dt*28);
+  player.anim+=dt*8;player.inv=Math.max(0,player.inv-dt);player.dashCd=Math.max(0,player.dashCd-dt);player.dash=Math.max(0,player.dash-dt);player.attack=Math.max(0,player.attack-dt);
+  const dir=(keys.right?1:0)-(keys.left?1:0);if(dir)player.face=dir;
+  if(player.dash>0){player.x+=player.vx*dt;player.vx*=Math.pow(.08,dt)}else{
+    player.vx=dir*235;if(keys.jump&&player.grounded){player.vy=-485;player.grounded=false;tone(220,.06,'triangle',.02)}
+    player.vy+=1250*dt;player.x+=player.vx*dt;player.y+=player.vy*dt;
+  }
+  player.x=clamp(player.x,48,W-48-player.w);if(player.y+player.h>=ground){player.y=ground-player.h;player.vy=0;player.grounded=true}
+  if(keys.attack&&player.attack<=0){player.attack=.25;player.attackHit=false;tone(310,.075,'triangle',.03)}
+  if(player.attack>.10&&!player.attackHit){const px=player.x+player.w/2+player.face*55,py=player.y+23;const bx=boss.x+boss.w/2,by=boss.y+50;if(Math.abs(px-bx)<70&&Math.abs(py-by)<85){player.attackHit=true;hitBoss()}else{for(let i=projectiles.length-1;i>=0;i--){const p=projectiles[i];if(Math.abs(px-p.x)<58&&Math.abs(py-p.y)<42){projectiles.splice(i,1);player.attackHit=true;soul=Math.min(99,soul+3);uiSoul.textContent=String(soul).padStart(2,'0');burst(p.x,p.y,'#b3eee0',6,120);tone(460,.06,'sine',.025);break}}}}
+  boss.inv=Math.max(0,boss.inv-dt);boss.face=player.x<boss.x?-1:1;boss.phaseT-=dt;
+  const bdist=Math.abs((player.x+player.w/2)-(boss.x+boss.w/2));
+  if(boss.phase==='idle'&&boss.phaseT<=0){boss.attackKind=Math.random()<(boss.hp<6?.52:.64)?'rush':'volley';boss.phase='tell';boss.phaseT=boss.hp<6?.43:.62;tone(145,.18,'sine',.025)}
+  else if(boss.phase==='tell'&&boss.phaseT<=0){boss.phase=boss.attackKind==='rush'?'rush':'volley';boss.phaseT=boss.attackKind==='rush'?.55:.56;if(boss.phase==='volley'){for(let i=-1;i<=1;i++){const dx=(player.x+player.w/2)-(boss.x+boss.w/2),dy=(player.y+24)-(boss.y+48);const a=Math.atan2(dy,dx)+i*.22;projectiles.push({x:boss.x+boss.w/2,y:boss.y+45,vx:Math.cos(a)*220,vy:Math.sin(a)*220,r:9})}tone(205,.16,'sawtooth',.025)}}
+  else if(boss.phase==='rush'){boss.x+=boss.face*(boss.hp<6?500:420)*dt;if(boss.phaseT<=0){boss.phase='recover';boss.phaseT=.8;boss.x=clamp(boss.x,70,W-150)}if(Math.abs(player.x+player.w/2-(boss.x+boss.w/2))<55&&Math.abs(player.y-boss.y)<80)damagePlayer()}
+  else if(boss.phase==='volley'&&boss.phaseT<=0){boss.phase='recover';boss.phaseT=.72}
+  else if(boss.phase==='recover'&&boss.phaseT<=0){boss.phase='idle';boss.phaseT=rand(.28,.65)}
+  boss.x=clamp(boss.x,55,W-145);
+  for(let i=projectiles.length-1;i>=0;i--){const p=projectiles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=80*dt;if(p.x<0||p.x>W||p.y<0||p.y>ground){projectiles.splice(i,1);continue}if(Math.abs(p.x-(player.x+player.w/2))<25&&Math.abs(p.y-(player.y+24))<32){projectiles.splice(i,1);damagePlayer()}}
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt;p.vx*=Math.pow(.2,dt);p.life-=dt;if(p.life<=0)particles.splice(i,1)}
+  if(Math.random()<dt*10)embers.push({x:rand(20,W-20),y:rand(120,ground-20),r:rand(1,2.4),life:rand(2,5),vy:rand(-10,-28)});
+  for(let i=embers.length-1;i>=0;i--){const p=embers[i];p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)embers.splice(i,1)}
+}
+function polygon(points,fill,stroke=null,lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
+function drawBackground(){
+ const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#101624');g.addColorStop(.52,'#1b2433');g.addColorStop(1,'#111722');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ const moon=ctx.createRadialGradient(482,175,10,482,175,230);moon.addColorStop(0,'#81959a26');moon.addColorStop(1,'#81959a00');ctx.fillStyle=moon;ctx.fillRect(220,0,520,430);
+ // distant stone spires
+ ctx.fillStyle='#101722';polygon([[0,315],[0,255],[45,270],[80,215],[108,282],[165,235],[207,301],[262,257],[300,318],[355,244],[402,310],[460,264],[510,315],[570,236],[616,303],[664,248],[718,309],[772,224],[813,298],[865,248],[912,279],[960,235],[960,370],[0,370]],'#121a27','#28303b',2);
+ for(let x=28;x<960;x+=112){ctx.fillStyle='#d2c49c15';ctx.beginPath();ctx.ellipse(x,310+Math.sin(x)*28,2,3,0,0,Math.PI*2);ctx.fill()}
+ // upper hanging roots
+ ctx.strokeStyle='#34404a';ctx.lineWidth=4;for(let i=0;i<11;i++){const x=i*102+18,tip=110+((i*37)%50);ctx.beginPath();ctx.moveTo(x,0);ctx.bezierCurveTo(x-15,45,x+18,75,x-3,tip);ctx.stroke();ctx.fillStyle='#555949';ctx.beginPath();ctx.moveTo(x-9,tip-16);ctx.lineTo(x,tip+4);ctx.lineTo(x+8,tip-14);ctx.fill()}
+ // arena platform
+ const floor=ctx.createLinearGradient(0,ground,0,H);floor.addColorStop(0,'#343842');floor.addColorStop(.08,'#242a34');floor.addColorStop(1,'#111722');ctx.fillStyle=floor;ctx.fillRect(0,ground,W,H-ground);
+ ctx.fillStyle='#83928e';ctx.fillRect(0,ground,W,2);ctx.fillStyle='#d6c49a';ctx.globalAlpha=.35;for(let x=12;x<W;x+=37){ctx.fillRect(x,ground+7+(x%3),rand(7,22),1)}ctx.globalAlpha=1;
+ // floor tiles and cracks
+ ctx.strokeStyle='#49505a55';ctx.lineWidth=1;for(let x=32;x<W;x+=96){ctx.beginPath();ctx.moveTo(x,ground+18);ctx.lineTo(x-8,ground+42);ctx.lineTo(x+9,ground+55);ctx.stroke();ctx.beginPath();ctx.moveTo(x+43,ground+92);ctx.lineTo(x+54,ground+105);ctx.stroke()}
+ // pillars, lamps
+ for(const x of [105,850]){ctx.fillStyle='#161e2a';ctx.fillRect(x-18,180,36,270);ctx.fillStyle='#303744';ctx.fillRect(x-25,178,50,12);ctx.fillRect(x-22,438,44,12);ctx.strokeStyle='#69736c';ctx.strokeRect(x-17,190,34,250);ctx.fillStyle='#e7c980';ctx.globalAlpha=.8+Math.sin(timer*2+x)*.15;ctx.beginPath();ctx.ellipse(x,262,4,8,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;const l=ctx.createRadialGradient(x,262,2,x,262,70);l.addColorStop(0,'#e8c87e35');l.addColorStop(1,'#e8c87e00');ctx.fillStyle=l;ctx.fillRect(x-70,192,140,140)}
+ // vignette
+ const v=ctx.createRadialGradient(W/2,H/2,130,W/2,H/2,600);v.addColorStop(0,'#05081300');v.addColorStop(1,'#050813ad');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
+}
+function drawPlayer(){
+ const cx=player.x+player.w/2,cy=player.y+player.h/2,step=player.grounded?Math.sin(player.anim)*2.5:0;
+ if(player.inv>0&&Math.floor(player.inv*18)%2===0)ctx.globalAlpha=.42;
+ // flowing dark cloak
+ ctx.fillStyle='#111721';polygon([[cx-12,cy-7],[cx+12,cy-7],[cx+19,cy+19+step],[cx+13,cy+26+step],[cx+4,cy+22+step],[cx-4,cy+28+step],[cx-17,cy+21+step]] ,'#151b26','#3c4248',1.2);
+ ctx.fillStyle='#293341';ctx.beginPath();ctx.ellipse(cx,cy-7,13,16,0,0,Math.PI*2);ctx.fill();
+ // mask
+ ctx.fillStyle='#e7e5d9';ctx.beginPath();ctx.moveTo(cx-13,cy-13);ctx.quadraticCurveTo(cx-10,cy-29,cx,cy-27);ctx.quadraticCurveTo(cx+12,cy-28,cx+14,cy-13);ctx.lineTo(cx+10,cy-2);ctx.quadraticCurveTo(cx,cy+4,cx-10,cy-2);ctx.closePath();ctx.fill();
+ polygon([[cx-9,cy-20],[cx-16,cy-34],[cx-4,cy-26]],'#ece9dc');polygon([[cx+7,cy-25],[cx+15,cy-39],[cx+14,cy-20]],'#ece9dc');
+ ctx.fillStyle='#18202a';ctx.beginPath();ctx.ellipse(cx+player.face*5,cy-12,2.2,3.8,player.face*.15,0,Math.PI*2);ctx.fill();
+ // little scarf
+ ctx.strokeStyle='#8fa9a5';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-9,cy+2);ctx.quadraticCurveTo(cx-18,cy+8,cx-24-player.vx*.02,cy+14);ctx.stroke();
+ // slash crescent
+ if(player.attack>.02){const p=1-player.attack/.25;ctx.save();ctx.translate(cx+player.face*16,cy-2);ctx.scale(player.face,1);ctx.globalAlpha=Math.sin(p*Math.PI)*.9;ctx.strokeStyle='#eff2d9';ctx.lineWidth=4;ctx.beginPath();ctx.arc(4,-2,31,-1.05,1.05);ctx.stroke();ctx.strokeStyle='#a5ddd4';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(4,-2,37,-.9,.9);ctx.stroke();ctx.restore()}
+ ctx.globalAlpha=1;
+}
+function drawBoss(){
+ const cx=boss.x+boss.w/2,cy=boss.y+boss.h/2,phase=boss.phase;
+ const bob=phase==='idle'?Math.sin(timer*3)*2:0;
+ if(boss.inv>0&&Math.floor(boss.inv*24)%2===0)ctx.globalAlpha=.5;
+ if(phase==='tell'){ctx.globalAlpha=.08+Math.sin(timer*28)*.06;ctx.fillStyle='#e68b7a';ctx.beginPath();ctx.ellipse(cx,ground-2,52,10,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+ // trailing mantle
+ ctx.fillStyle='#201b27';polygon([[cx-23,cy-15+bob],[cx+22,cy-17+bob],[cx+36,cy+35],[cx+18,cy+44],[cx+3,cy+37],[cx-17,cy+47],[cx-35,cy+36]],'#211d29','#685c5c',2);
+ ctx.fillStyle='#4b3b40';polygon([[cx-26,cy-21+bob],[cx-18,cy-43+bob],[cx+17,cy-42+bob],[cx+28,cy-20+bob],[cx+22,cy+30],[cx-23,cy+28]],'#51434a','#a58b73',2);
+ ctx.fillStyle='#8d775f';polygon([[cx-20,cy-38+bob],[cx-12,cy-55+bob],[cx+13,cy-54+bob],[cx+23,cy-34+bob],[cx+18,cy-4],[cx-18,cy-4]],'#85715f','#cfb98e',1.5);
+ // antler crown
+ ctx.strokeStyle='#d3c09a';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx-11,cy-47+bob);ctx.lineTo(cx-25,cy-72+bob);ctx.lineTo(cx-28,cy-85+bob);ctx.moveTo(cx-25,cy-72+bob);ctx.lineTo(cx-39,cy-76+bob);ctx.moveTo(cx+10,cy-48+bob);ctx.lineTo(cx+25,cy-71+bob);ctx.lineTo(cx+28,cy-87+bob);ctx.moveTo(cx+25,cy-71+bob);ctx.lineTo(cx+39,cy-77+bob);ctx.stroke();ctx.lineCap='butt';
+ // faceplate and eyes
+ ctx.fillStyle='#d7cdb5';ctx.beginPath();ctx.moveTo(cx-15,cy-35+bob);ctx.quadraticCurveTo(cx,cy-48+bob,cx+15,cy-35+bob);ctx.lineTo(cx+12,cy-14);ctx.lineTo(cx,cy-7);ctx.lineTo(cx-12,cy-14);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#222630';ctx.beginPath();ctx.ellipse(cx-6,cy-27+bob,2.3,4,0,0,Math.PI*2);ctx.ellipse(cx+6,cy-27+bob,2.3,4,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#dc997e';ctx.globalAlpha=.85;ctx.fillRect(cx-10,cy-28+bob,3,2);ctx.fillRect(cx+7,cy-28+bob,3,2);ctx.globalAlpha=1;
+ // blade held out during tells / charge
+ ctx.save();ctx.translate(cx+(boss.face*-1)*22,cy+8);ctx.rotate((phase==='tell'?.55:phase==='rush'?-.6:.05)*boss.face);ctx.fillStyle='#b8aa8a';ctx.fillRect(boss.face===1?-2:-3,-43,5,50);ctx.fillStyle='#d6d1bc';ctx.fillRect(-1,-41,2,46);ctx.fillStyle='#493d3d';ctx.fillRect(-8,2,16,5);ctx.restore();
+ ctx.globalAlpha=1;
+}
+function drawHud(){
+ // player masks
+ ctx.fillStyle='#0a0e17bb';ctx.fillRect(22,18,170,54);ctx.strokeStyle='#59616a';ctx.strokeRect(22.5,18.5,169,53);ctx.fillStyle='#b7c8c0';ctx.font='10px DM Mono,monospace';ctx.letterSpacing='2px';ctx.fillText('VESSEL',36,34);ctx.letterSpacing='0px';
+ for(let i=0;i<player.maxHp;i++){const x=40+i*27,y=52;ctx.fillStyle=i<player.hp?'#dcd9c9':'#3e4651';ctx.beginPath();ctx.moveTo(x,y-8);ctx.quadraticCurveTo(x-10,y-9,x-8,y+1);ctx.quadraticCurveTo(x-5,y+9,x,y+12);ctx.quadraticCurveTo(x+7,y+6,x+8,y);ctx.quadraticCurveTo(x+9,y-9,x,y-8);ctx.fill();if(i<player.hp){ctx.fillStyle='#606c70';ctx.fillRect(x-1,49,2,5)}}
+ // boss health and name
+ const bx=345,bw=270;ctx.fillStyle='#0a0e17c9';ctx.fillRect(bx,18,bw,48);ctx.strokeStyle='#62636b';ctx.strokeRect(bx+.5,18.5,bw-1,47);ctx.fillStyle='#c9b894';ctx.font='10px DM Mono,monospace';ctx.textAlign='center';ctx.letterSpacing='2px';ctx.fillText('THE HOLLOW WARDEN',480,34);ctx.letterSpacing='0px';ctx.fillStyle='#353640';ctx.fillRect(bx+13,45,bw-26,7);ctx.fillStyle='#c17c76';ctx.fillRect(bx+13,45,(bw-26)*boss.hp/boss.maxHp,7);ctx.fillStyle='#eac78d';ctx.beginPath();ctx.arc(480,48,3,0,Math.PI*2);ctx.fill();ctx.textAlign='left';
+ // prompt
+ if(timer<4){ctx.fillStyle='#d1d2c49a';ctx.font='9px DM Mono,monospace';ctx.textAlign='center';ctx.fillText('✦  STRIKE TO GATHER SOUL  ✦',480,510);ctx.textAlign='left'}
+}
+function overlay(title,subtitle,lines,accent='#e5c78b'){
+ ctx.fillStyle='#080b15b8';ctx.fillRect(0,0,W,H);
+ const glow=ctx.createRadialGradient(480,240,20,480,240,260);glow.addColorStop(0,'#1c27376e');glow.addColorStop(1,'#11172200');ctx.fillStyle=glow;ctx.fillRect(170,70,620,360);
+ ctx.textAlign='center';ctx.fillStyle='#9aa8a6';ctx.font='11px DM Mono,monospace';ctx.letterSpacing='4px';ctx.fillText('A HOLLOW VALE TALE',480,153);ctx.letterSpacing='0px';
+ ctx.fillStyle='#e7e2d4';ctx.font='48px Marcellus,Georgia,serif';ctx.fillText(title,480,211);
+ ctx.fillStyle=accent;ctx.fillRect(433,229,94,1);ctx.fillStyle='#bdc4c0';ctx.font='13px DM Mono,monospace';ctx.fillText(subtitle,480,260);
+ lines.forEach((line,i)=>{ctx.fillStyle=i===0?'#d8c99e':'#8c9aa2';ctx.font=(i===0?'11px':'10px')+' DM Mono,monospace';ctx.fillText(line,480,315+i*24)});
+ ctx.fillStyle='#111a24';ctx.fillRect(376,410,208,42);ctx.strokeStyle='#b89e70';ctx.strokeRect(376.5,410.5,207,41);ctx.fillStyle=accent;ctx.font='11px DM Mono,monospace';ctx.letterSpacing='2px';ctx.fillText(mode==='title'?'BEGIN THE TRIAL':'TRY AGAIN',480,436);ctx.letterSpacing='0px';
+ ctx.fillStyle='#879397';ctx.font='9px DM Mono,monospace';ctx.fillText('PRESS J / TAP TO CONTINUE',480,480);ctx.textAlign='left';
+}
+function render(){
+ ctx.save();if(shake>0)ctx.translate(rand(-shake,shake),rand(-shake,shake));drawBackground();
+ ctx.fillStyle='#080b1466';ctx.beginPath();ctx.ellipse(player.x+17,ground+3,28,5,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(boss.x+boss.w/2,ground+4,50,7,0,0,Math.PI*2);ctx.fill();
+ for(const p of embers){ctx.globalAlpha=clamp(p.life/2,0,.65);ctx.fillStyle='#d2bd86';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+ for(const p of projectiles){const glow=ctx.createRadialGradient(p.x,p.y,1,p.x,p.y,18);glow.addColorStop(0,'#f1d8a8');glow.addColorStop(.3,'#d68d79');glow.addColorStop(1,'#d68d7900');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,18,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f3d9aa';ctx.beginPath();ctx.arc(p.x,p.y,p.r*.55,0,Math.PI*2);ctx.fill()}
+ drawBoss();drawPlayer();
+ for(const p of particles){ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+ drawHud();if(damageFlash>0){ctx.fillStyle=`rgba(190,72,72,${damageFlash*.24})`;ctx.fillRect(0,0,W,H)}ctx.restore();
+ if(mode==='title')overlay('The Last Bell','A pale wanderer. A keeper who will not yield.',['One arena. One final trial.','Find the opening between the Warden’s strikes.','']);
+ else if(mode==='dead')overlay('The light fades','The Hollow Warden still stands.',['Your blade can break its guard.','Dash through danger. Strike when it recovers.'],'#dd9686');
+ else if(mode==='won')overlay('The bell is quiet','The Hollow Warden has fallen.',['Trial complete  ·  '+formatTime(timer),'A new silence settles over the vale.'],'#c9d6bc');
+ else if(mode==='paused')overlay('A moment of stillness','The trial waits.',['Press ESC to return.',''],'#e5c78b');
+}
+function frame(now){const dt=Math.min(.033,(now-last)/1000||0);last=now;update(dt);render();requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
+
